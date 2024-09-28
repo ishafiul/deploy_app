@@ -11,14 +11,7 @@ import {S3Client, PutObjectCommand} from '@aws-sdk/client-s3';
 
 import AWS from "aws-sdk";
 
-const s3Client = new S3Client({
-    region: "auto",
-    endpoint: `https://0f23a9fe02e7260db3b9922bda5c83a9.r2.cloudflarestorage.com`,
-    credentials: {
-        accessKeyId: '05d76448a032d53093095fd45fe67c81',
-        secretAccessKey: 'f90f7002df3b0c2f716bf11893d2a4eec620b76ddac4c0ec469e80e9ffbaeae8',
-    },
-});
+
 const s3 = new AWS.S3({
     region: "auto",
     endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -162,8 +155,6 @@ async function findFiles(container: Docker.Container, path: string, projectId: s
 
 async function uploadFileToS3(projectId: string, filePath: string, container: Docker.Container) {
     try {
-        // Create the S3 key using the project ID and the file name
-        const s3Client = new S3Client({region: 'your-region'});
         const s3Key = `${projectId}/${filePath.replace('./dist/', '')}`
         // Get a stream of the file from the Docker container
 
