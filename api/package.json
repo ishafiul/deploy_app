@@ -1,0 +1,15 @@
+{
+  "name": "api",
+  "scripts": {
+    "dev": "bun run --hot src/index.ts"
+  },
+  "dependencies": {
+    "bull": "^4.16.3",
+    "bullmq": "^5.13.2",
+    "hono": "^4.6.3"
+  },
+  "devDependencies": {
+    "@types/bull": "^4.10.0",
+    "@types/bun": "latest"
+  }
+}
