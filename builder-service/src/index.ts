@@ -1,249 +1,190 @@
 import Docker from 'dockerode';
-import {QueueEvents, Worker} from 'bullmq';
-import * as tar from 'tar-stream';
-import * as fs from 'fs';
-import * as path from 'path';
-import {Readable} from "node:stream";
-// Initialize Docker client
+import {Worker} from 'bullmq';
+import {Readable} from 'stream';
+import AWS from 'aws-sdk';
+import dotenv from 'dotenv';
+dotenv.config();
+// Initialize Docker and AWS S3 clients
 const docker = new Docker();
-import {S3Client, PutObjectCommand} from '@aws-sdk/client-s3';
-
-
-import AWS from "aws-sdk";
-
-
 const s3 = new AWS.S3({
-    region: "auto",
+    region: 'auto',
     endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
     credentials: {
-        accessKeyId: `${process.env.R2_ACCESS_KEY_ID}`,
-        secretAccessKey: `${process.env.R2_ACCESS_KEY_SECRET}`,
-    }
+        accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.R2_ACCESS_KEY_SECRET!,
+    },
 });
 
-async function buildDockerImage(repoUrl: string) {
-    return new Promise<void>((resolve, reject) => {
+async function buildDockerImage(repoUrl: string): Promise<void> {
+    return new Promise((resolve, reject) => {
         docker.buildImage(
             {
-                context: './src/react', // The directory containing the Dockerfile
-                src: ['Dockerfile'], // The Dockerfile name or list of files to include
+                context: './src/react', // Directory containing Dockerfile
+                src: ['Dockerfile'],
             },
             {
                 t: 'node-app-image', // Tag for the built image
-                buildargs: {
-                    REPO_URL: repoUrl, // Passing the repo URL as a build argument
-                },
+                buildargs: {REPO_URL: repoUrl}, // Pass repo URL
             },
             (error, result) => {
                 if (error) {
-                    reject(error);
-                } else {
-                    if(result === undefined) {
-                        reject();
-                        return;
-                    }
-                    result.pipe(process.stdout);
-
-                    result.on('end', () => {
-                        console.log('Build completed');
-                        resolve();
-                    });
-
-                    result.on('error', (error) => {
-                        reject(error);
-                    });
+                    return reject(error);
                 }
+
+                result?.pipe(process.stdout);
+                result?.on('end', () => {
+                    console.log('Docker image built successfully.');
+                    resolve();
+                });
+                result?.on('error', reject);
             }
         );
     });
 }
 
-async function pullAndCreate(repoUrl: string) {
-    await docker.pull('node:20');
+async function pullAndCreateContainer(repoUrl: string) {
+    await docker.pull('node:20'); // Pull base Node.js image
+    await buildDockerImage(repoUrl); // Build the Docker image
 
-    // Build the Docker image
-    await buildDockerImage(repoUrl);
-
-    // Create and start the container using the built image
     const container = await docker.createContainer({
         Image: 'node-app-image',
         Cmd: [
-            '/bin/sh', '-c',
-            `git clone ${repoUrl} app && cd app && npm install --legacy-peer-deps && npm run build && \
-                echo "Build complete!" && tail -f /dev/null`
+            '/bin/sh',
+            '-c',
+            `echo "Build complete!" && tail -f /dev/null`
         ],
         Tty: false,
         HostConfig: {
-            Memory: 512 * 1024 * 1024, // Limit to 512MB
-            NanoCpus: 1000000000, // Limit to 1 CPU core
+            Memory: 512 * 1024 * 1024, // 512MB memory limit
+            NanoCpus: 1000000000, // 1 CPU core limit
         },
     });
 
     await container.start();
+    return container;
+}
 
-    // Poll for logs to check when build is complete
+async function monitorBuild(
+    container: Docker.Container,
+    timeout = 1000 * 60 * 5
+): Promise<void> {
     let isBuildComplete = false;
-    const start = Date.now();
-    const timeout = 1000 * 60 * 5; // 5 minutes timeout
+    const startTime = Date.now();
 
-    while (!isBuildComplete) {
+    while (!isBuildComplete && Date.now() - startTime < timeout) {
         const logs = await container.logs({
             follow: true,
             stdout: true,
             stderr: true,
-            tail: 100 // Tail the last 100 lines
+            tail: 100,
         });
 
         logs.on('data', (chunk) => {
             const output = chunk.toString();
-            console.log(output); // Print the logs to the console
-            if (output.includes('Build complete!')) { // Check for the completion message
+            console.log(output);
+            if (output.includes('Build complete!')) {
                 isBuildComplete = true;
             }
         });
 
-        if (Date.now() - start > timeout) {
-            console.error('Build timed out');
-            break;
+        if (!isBuildComplete) {
+            console.log('Waiting for build completion...');
+            await new Promise((resolve) => setTimeout(resolve, 5000));
         }
-
-        console.log('Waiting for build to complete...');
-        await new Promise(resolve => setTimeout(resolve, 5000)); // Check every 5 seconds
     }
 
-    return container;
+    if (!isBuildComplete) {
+        throw new Error('Build process timed out');
+    }
 }
 
-async function findFiles(container: Docker.Container, path: string, projectId: string) {
-    // Create an exec instance to list files and directories
+async function findAndUploadFiles(
+    container: Docker.Container,
+    path: string,
+    projectId: string
+) {
     const exec = await container.exec({
-        Cmd: ['find', path], // Use 'find' to list all files and directories
+        Cmd: ['find', path],
         AttachStdout: true,
-        AttachStderr: true
+        AttachStderr: true,
+    });
+    const stream = await new Promise<Readable>((resolve, reject) =>
+        exec.start({}, (err, result) =>
+            err ? reject(err) : resolve(result as Readable)
+        )
+    );
+
+    let filePaths = '';
+    stream.on('data', (chunk) => {
+        filePaths += chunk.toString();
     });
 
-    // Start the exec instance and get the stream
-    const stream: Readable = await new Promise((resolve, reject) => {
-        exec.start({}, (err, result) => {
+    stream.on('end', () => {
+        const paths = filePaths.trim().split('\n');
+        paths.forEach((filePath) => uploadFileToS3(projectId, filePath, container));
+    });
+
+    stream.on('error', (err) => {
+        console.error('Error finding files:', err);
+    });
+}
+
+async function uploadFileToS3(
+    projectId: string,
+    filePath: string,
+    container: Docker.Container
+) {
+    try {
+        const exec = await container.exec({
+            Cmd: ['cat', filePath],
+            AttachStdout: true,
+            AttachStderr: true,
+        });
+        const stream = await new Promise<Readable>((resolve, reject) =>
+            exec.start({}, (err, result) =>
+                err ? reject(err) : resolve(result as Readable)
+            )
+        );
+
+        const s3Key = `${projectId}/${filePath.replace('./dist/', '')}`;
+        const uploadParams = {
+            Bucket: process.env.R2_BUCKET!,
+            Key: s3Key,
+            Body: stream,
+        };
+
+        s3.upload(uploadParams, (err: any, data: { Location: any; }) => {
             if (err) {
-                reject(err);
+                console.error('Error uploading file to S3:', err);
             } else {
-                resolve(result as Readable);
+                console.log('File uploaded to S3:', data.Location);
             }
         });
-    });
-
-    // Collect data from the stream and print the paths
-    let output = '';
-
-    stream.on('data', (chunk: Buffer) => {
-        output += chunk.toString(); // Collect the data
-    });
-
-    // Handle the end of the stream
-    stream.on('end', () => {
-        const paths = output.trim().split('\n'); // Split by new line to get each path
-        paths.forEach((path) => uploadFileToS3(projectId, path, container)); // Print each path
-    });
-
-    // Handle errors in the stream
-    stream.on('error', (streamErr) => {
-        console.error('Stream error:', streamErr);
-    });
-}
-
-
-async function uploadFileToS3(projectId: string, filePath: string, container: Docker.Container) {
-    try {
-        const s3Key = `${projectId}/${filePath.replace('./dist/', '')}`
-        // Get a stream of the file from the Docker container
-
-
-        const exec = await container.exec({
-            Cmd: ['find', filePath], // Use 'find' to list all files and directories
-            AttachStdout: true,
-            AttachStderr: true
-        });
-
-        // Start the exec instance and get the stream
-        const stream: Readable = await new Promise((resolve, reject) => {
-            exec.start({}, (err, result) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(result as Readable);
-                }
-            });
-        });
-
-        // Collect data from the stream and print the paths
-        let output = '';
-
-        stream.on('data', (chunk: Buffer) => {
-            output += chunk.toString(); // Collect the data
-        });
-
-        // Handle the end of the stream
-        stream.on('end', async () => {
-
-            // Create the PutObjectCommand with the file stream
-            const uploadParams = {
-                Bucket: `${process.env.R2_BUCKET}`, // Replace with your bucket name
-                Key: s3Key,
-                Body: output, // File content to upload
-            };
-
-            // Use the PutObjectCommand to upload the file
-            s3.upload(uploadParams, (err: any, data: { Location: any; }) => {
-                if (err) {
-                    console.error('Error uploading file to S3:', err);
-                } else {
-                    console.log(`File uploaded successfully to S3: ${data.Location}`);
-                }
-            });
-            console.log(`File uploaded successfully to S3:`);
-        });
-
-        // Handle errors in the stream
-        stream.on('error', (streamErr) => {
-            console.error('Stream error:', streamErr);
-        });
-
-
     } catch (error) {
-        console.error('Error uploading file to S3:', error);
+        console.error('Error during S3 upload:', error);
     }
 }
 
-const worker = new Worker('buildQueue', async (job) => {
-    const {repoUrl, projectId} = job.data;
+const worker = new Worker(
+    'buildQueue',
+    async (job) => {
+        const {repoUrl, projectId} = job.data;
+        try {
+            const container = await pullAndCreateContainer(repoUrl);
+            await monitorBuild(container);
 
-    try {
+            console.log('Finding and uploading build files...');
+            await findAndUploadFiles(container, './dist', projectId);
 
-        const container = await pullAndCreate(repoUrl);
-        // Delay to ensure everything is set up before finding files
-        await new Promise(resolve => setTimeout(resolve, 3000)); // Adjust the delay as needed
-
-        // Make sure the container is running
-        const containerStatus = await container.inspect();
-        if (containerStatus.State.Running) {
-            await findFiles(container, "./dist", projectId);
-        } else {
-            console.error('Container is not running. Cannot find files.');
+            await container.stop();
+            await container.remove();
+        } catch (error) {
+            console.error(`Build failed for project ${projectId}:`, error);
         }
-        await new Promise(resolve => setTimeout(resolve, 3000)); // Adjust the delay as needed
-        await container.stop();
-        await container.remove();
-
-    } catch (err) {
-        console.error(`Build failed for project ${projectId}:`, err);
-
-    }
-}, {
-    connection: {
-        host: "192.168.0.101",
-        port: 6379,
     },
-});
+    {
+        connection: {host: '192.168.0.101', port: 6379},
+    }
+);
 
-console.log('Worker is running and waiting for jobs...');
+console.log('Worker is running and awaiting jobs...');

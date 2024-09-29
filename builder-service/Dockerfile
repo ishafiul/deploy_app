@@ -21,4 +21,4 @@ EXPOSE 3000
 
 
 # Command to run the worker (assuming your compiled TypeScript files are in dist/)
-CMD ["node", "dist/worker.js"]
+CMD ["node", "dist/index.js"]
