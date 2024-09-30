@@ -19,8 +19,6 @@ RUN npm run build
 RUN mkdir /app/dist && \
     cp -r /app/source/dist/* /app/dist
 
-# Expose any ports your app might need (optional)
-EXPOSE 3000
-
-# Command to keep the container running
-CMD ["tail", "-f", "/dev/null"]
+# If you don't need to keep the container running, you can just end the Dockerfile here
+# Alternatively, you could add a simple CMD to exit immediately:
+CMD ["echo", "Build complete"]

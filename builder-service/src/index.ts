@@ -3,6 +3,9 @@ import {Worker} from 'bullmq';
 import {Readable} from 'stream';
 import AWS from 'aws-sdk';
 import dotenv from 'dotenv';
+import * as mime from 'mime-types';
+import {statSync} from "node:fs";
+
 dotenv.config();
 // Initialize Docker and AWS S3 clients
 const docker = new Docker();
@@ -108,20 +111,31 @@ async function findAndUploadFiles(
         AttachStdout: true,
         AttachStderr: true,
     });
+
     const stream = await new Promise<Readable>((resolve, reject) =>
         exec.start({}, (err, result) =>
             err ? reject(err) : resolve(result as Readable)
         )
     );
 
-    let filePaths = '';
+    let filePaths: string[] = [];
+
+    stream.setEncoding('utf8');
     stream.on('data', (chunk) => {
-        filePaths += chunk.toString();
+        filePaths = filePaths.concat(chunk.trim().split('\n'));
     });
 
-    stream.on('end', () => {
-        const paths = filePaths.trim().split('\n');
-        paths.forEach((filePath) => uploadFileToS3(projectId, filePath, container));
+    stream.on('end', async () => {
+        const uploadPromises = filePaths
+            .filter((filePath) => filePath) // Ensure filePath is valid
+            .map((filePath) => uploadFileToS3(projectId, filePath, container));
+
+        try {
+            await Promise.all(uploadPromises); // Wait for all uploads to complete
+            console.log('All files uploaded successfully.');
+        } catch (uploadError) {
+            console.error('Error during file uploads:', uploadError);
+        }
     });
 
     stream.on('error', (err) => {
@@ -129,41 +143,85 @@ async function findAndUploadFiles(
     });
 }
 
+
+// Promisify the stream to buffer function
+const streamToBuffer = async (stream: Readable) => {
+    const chunks: Buffer[] = [];
+    return new Promise<Buffer>((resolve, reject) => {
+        stream.on('data', chunk => chunks.push(Buffer.from(chunk)));
+        stream.on('error', reject);
+        stream.on('end', () => resolve(Buffer.concat(chunks)));
+    });
+};
+
 async function uploadFileToS3(
     projectId: string,
     filePath: string,
     container: Docker.Container
 ) {
+
+    // TODO: uploading bad files
     try {
+        const mimetype = mime.lookup(filePath);
+        if (!mimetype) {
+            console.error('MIME type not found for file:', filePath);
+            return;
+        }
+
+        const s3Key = `${projectId}/${filePath.replace('./dist/', '')}`;
+
+        // Create an exec command to read the file using 'cat'
         const exec = await container.exec({
-            Cmd: ['cat', filePath],
+            Cmd: ['cat', `/app/${filePath}`],
             AttachStdout: true,
             AttachStderr: true,
         });
-        const stream = await new Promise<Readable>((resolve, reject) =>
+
+        // Start the exec command and get the file stream
+        const fileStream = await new Promise<Readable>((resolve, reject) =>
             exec.start({}, (err, result) =>
                 err ? reject(err) : resolve(result as Readable)
             )
         );
 
-        const s3Key = `${projectId}/${filePath.replace('./dist/', '')}`;
-        const uploadParams = {
-            Bucket: process.env.R2_BUCKET!,
-            Key: s3Key,
-            Body: stream,
-        };
+        let fileBuffer = Buffer.alloc(0);
 
-        s3.upload(uploadParams, (err: any, data: { Location: any; }) => {
-            if (err) {
-                console.error('Error uploading file to S3:', err);
-            } else {
-                console.log('File uploaded to S3:', data.Location);
-            }
+        // Collect data from the stream
+        fileStream.on('data', (chunk) => {
+            fileBuffer = Buffer.concat([fileBuffer, chunk]);
         });
+
+        // Once the stream ends, upload to S3
+        fileStream.on('end', () => {
+            const uploadParams = {
+                Bucket: process.env.R2_BUCKET!,
+                Key: s3Key,
+                Body: fileBuffer,  // Use the collected buffer directly
+                ContentType: mimetype,
+            };
+
+            // Upload to S3
+            s3.upload(uploadParams, (err: { message: any; }, data: { Location: any; }) => {
+                if (err) {
+                    console.error('Error uploading file to S3:', err.message);
+                    console.error('Detailed Error:', err);
+                } else {
+                    console.log('File uploaded to S3:', data.Location);
+                }
+            });
+        });
+
+        fileStream.on('error', (err) => {
+            console.error('Error reading file stream:', err);
+        });
+
     } catch (error) {
         console.error('Error during S3 upload:', error);
     }
 }
+
+
+
 
 const worker = new Worker(
     'buildQueue',
@@ -174,6 +232,8 @@ const worker = new Worker(
             await monitorBuild(container);
 
             console.log('Finding and uploading build files...');
+            // Wait for some time before finding files to allow time for the build process to complete
+            await new Promise(resolve => setTimeout(resolve, 10000));
             await findAndUploadFiles(container, './dist', projectId);
 
             await container.stop();
