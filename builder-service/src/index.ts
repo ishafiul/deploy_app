@@ -5,6 +5,7 @@ import AWS from 'aws-sdk';
 import dotenv from 'dotenv';
 import * as mime from 'mime-types';
 import {statSync} from "node:fs";
+import {PassThrough} from "node:stream";
 
 dotenv.config();
 // Initialize Docker and AWS S3 clients
@@ -159,8 +160,6 @@ async function uploadFileToS3(
     filePath: string,
     container: Docker.Container
 ) {
-
-    // TODO: uploading bad files
     try {
         const mimetype = mime.lookup(filePath);
         if (!mimetype) {
@@ -170,57 +169,86 @@ async function uploadFileToS3(
 
         const s3Key = `${projectId}/${filePath.replace('./dist/', '')}`;
 
-        // Create an exec command to read the file using 'cat'
-        const exec = await container.exec({
+        // Define the exec options
+        const options = {
             Cmd: ['cat', `/app/${filePath}`],
+            Tty: false,
             AttachStdout: true,
             AttachStderr: true,
-        });
+        };
 
-        // Start the exec command and get the file stream
-        const fileStream = await new Promise<Readable>((resolve, reject) =>
-            exec.start({}, (err, result) =>
-                err ? reject(err) : resolve(result as Readable)
-            )
-        );
+        // Create a write stream for S3 upload
+        const s3UploadStream = new PassThrough();
 
-        let fileBuffer = Buffer.alloc(0);
-
-        // Collect data from the stream
-        fileStream.on('data', (chunk) => {
-            fileBuffer = Buffer.concat([fileBuffer, chunk]);
-        });
-
-        // Once the stream ends, upload to S3
-        fileStream.on('end', () => {
-            const uploadParams = {
-                Bucket: process.env.R2_BUCKET!,
-                Key: s3Key,
-                Body: fileBuffer,  // Use the collected buffer directly
-                ContentType: mimetype,
-            };
-
-            // Upload to S3
-            s3.upload(uploadParams, (err: { message: any; }, data: { Location: any; }) => {
+        // Start the exec command
+        await new Promise((resolve, reject) => {
+            container.exec(options, function (err, exec) {
                 if (err) {
-                    console.error('Error uploading file to S3:', err.message);
-                    console.error('Detailed Error:', err);
-                } else {
-                    console.log('File uploaded to S3:', data.Location);
+                    reject('Container exec failed!');
+                    return;
+                }
+                if (exec) {
+                    exec.start({hijack: true}, function (err: any, stream: any) {
+                        if (err) {
+                            reject('Container start execution failed!');
+                            return;
+                        }
+
+                        // Demux stdout and stderr
+                        const stdout = new PassThrough();
+                        const stderr = new PassThrough();
+                        container.modem.demuxStream(stream, stdout, stderr);
+
+                        // Pipe stdout data to the S3 upload stream
+                        stdout.on('data', function (chunk: Buffer) {
+                            s3UploadStream.write(chunk);
+                        });
+
+                        // Handle stream end
+                        stream.on('end', () => {
+                            s3UploadStream.end(); // Close the upload stream
+                            console.log('Closed stream');
+                            resolve('Ready');
+                        });
+
+                        // Handle any errors
+                        stderr.on('data', (errData: { toString: () => any; }) => {
+                            console.error('Error output from the container:', errData.toString());
+                        });
+
+                        // Inspect the exec for debugging if needed
+                        exec.inspect(function (err, data) {
+                            if (err) {
+                                console.error('Execution Inspect failed!', err);
+                            }
+                        });
+                    });
                 }
             });
         });
 
-        fileStream.on('error', (err) => {
-            console.error('Error reading file stream:', err);
+        // Upload the collected data to S3
+        const uploadParams = {
+            Bucket: process.env.R2_BUCKET!,
+            Key: s3Key,
+            Body: s3UploadStream,  // Stream the upload directly from the output
+            ContentType: mimetype,
+        };
+
+        // Start the upload
+        s3.upload(uploadParams, (err: { message: any; }, data: { Location: any; }) => {
+            if (err) {
+                console.error('Error uploading file to S3:', err.message);
+                console.error('Detailed Error:', err);
+            } else {
+                console.log('File uploaded to S3:', data.Location);
+            }
         });
 
     } catch (error) {
         console.error('Error during S3 upload:', error);
     }
 }
-
-
 
 
 const worker = new Worker(
