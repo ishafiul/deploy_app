@@ -4,7 +4,6 @@ import {Readable} from 'stream';
 import AWS from 'aws-sdk';
 import dotenv from 'dotenv';
 import * as mime from 'mime-types';
-import {statSync} from "node:fs";
 import {PassThrough} from "node:stream";
 
 dotenv.config();
