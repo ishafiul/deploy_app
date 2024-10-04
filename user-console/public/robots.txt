@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://www.groundcraft.xyz/
+
+# Sitemaps
+Sitemap: https://www.groundcraft.xyz/sitemap.xml

@@ -1,13 +1,9 @@
 'use client'
 
-import Image from "next/image";
-import { DatePicker } from 'antd';
-import { Flex, Input, Typography } from 'antd';
+import { Flex, Input, } from 'antd';
 import type { GetProps } from 'antd';
 
 type OTPProps = GetProps<typeof Input.OTP>;
-
-const { Title } = Typography;
 export default function Home() {
     const onChange: OTPProps['onChange'] = (text:string) => {
         console.log('onChange:', text);
