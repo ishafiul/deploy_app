@@ -4,7 +4,7 @@ import {Form, Input, Button, Typography, Space} from 'antd';
 import {useRouter} from "next/navigation";
 
 const {Title} = Typography;
-export default function Home() {
+export default function VerifyOTP() {
     const router = useRouter();
     return (
         <Space direction="vertical" size="large" align="center" className="w-full">

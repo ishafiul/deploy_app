@@ -5,7 +5,7 @@ import Router from 'next/router'; // For redirecting to login when necessary
 
 // Create an axios instance
 const axiosInstance = axios.create({
-    baseURL: process.env.API_HOST, // Your API base URL
+    baseURL: "https://api.ishaf.info", // Your API base URL
 });
 
 // Request interceptor to add access token to headers
@@ -37,7 +37,7 @@ axiosInstance.interceptors.response.use(
 
             try {
                 // Attempt to refresh the token
-                const refreshResponse = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`, {}, {
+                const refreshResponse = await axios.post(`https://api.ishaf.info/auth/refresh`, {}, {
                     withCredentials: true, // For sending cookies
                 });
 
