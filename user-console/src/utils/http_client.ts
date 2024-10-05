@@ -1,7 +1,8 @@
 // utils/axiosInstance.js
 
 import axios from 'axios';
-import Router from 'next/router'; // For redirecting to login when necessary
+import Router from 'next/router';
+import LocalStorageService from "@/services/local_store_service"; // For redirecting to login when necessary
 
 // Create an axios instance
 const axiosInstance = axios.create({
@@ -11,7 +12,7 @@ const axiosInstance = axios.create({
 // Request interceptor to add access token to headers
 axiosInstance.interceptors.request.use(
     (config) => {
-        const accessToken = localStorage.getItem('accessToken');
+        const accessToken = LocalStorageService.getToken();
         if (accessToken) {
             config.headers['Authorization'] = `Bearer ${accessToken}`;
         }
@@ -43,8 +44,7 @@ axiosInstance.interceptors.response.use(
 
                 // Get the new access token
                 const {accessToken} = refreshResponse.data;
-                localStorage.setItem('accessToken', accessToken);
-
+                LocalStorageService.setToken(accessToken);
                 // Update the Authorization header in the original request
                 originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
 

@@ -26,7 +26,13 @@ export default class AuthService {
     }
 
     async logout(): Promise<void> {
-
+        await axiosInstance.delete('/auth/logout',{
+            headers: {
+                'Authorization': `Bearer ${LocalStorageService.getToken()}`
+            }
+        });
+        LocalStorageService.removeToken();
+        LocalStorageService.removeDeviceUuid();
     }
 
     loginWithGithub() {
