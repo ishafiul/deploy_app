@@ -12,7 +12,7 @@ export function useUser() {
         if (token) {
             setUser(true);
         } else {
-            setUser(true);
+            setUser(null);
         }
 
     }, []);

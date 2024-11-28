@@ -2,12 +2,12 @@
 
 import { Spin } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
-import {useRouter, useSearchParams} from "next/navigation";
+import { useSearchParams} from "next/navigation";
 import React, {useEffect} from "react";
 import {useAuthBloc} from "@/hooks/github_hook";
 
 export default function VerifyGithub() {
-    const router = useRouter();
+    //const router = useRouter();
     const searchParams = useSearchParams();
     const { loading, error, loginWithGithub } = useAuthBloc(); // Use the BLoC
 
@@ -16,10 +16,10 @@ export default function VerifyGithub() {
 
         if (code) {
             // Call the login method from the BLoC
-            loginWithGithub(code).then((token) => {
-                if (token) {
+            loginWithGithub(code).then(() => {
+                /*if (token) {
                     router.push("/"); // Redirect on successful login
-                }
+                }*/
             });
         } else {
             console.error("No GitHub code found in query parameters");
