@@ -2,11 +2,10 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { Context } from 'hono';
 
 export type Env = {
-    DB_URL: string;
-    DB_AUTH_TOKEN: string;
-    SERVER_AUTH_TOKEN: string;
-    TOKEN_PRIVATE_KEY: string;
-    TOKEN_PUBLIC_KEY: string;
+    TURSO_AUTH_TOKEN: string;
+    TURSO_URL: string;
+    JWT_SECRET: string;
+    SERVER_KEY: string;
 };
 
 export type HonoTypes = {

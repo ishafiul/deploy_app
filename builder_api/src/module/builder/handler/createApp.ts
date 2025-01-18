@@ -1,5 +1,5 @@
 import {createRoute, z} from "@hono/zod-openapi";
-import {HonoApp, HonoContext} from "../../../type";
+import {HonoApp} from "../../../type";
 import {Queue} from 'bullmq';
 
 // Define request body schema
@@ -76,7 +76,7 @@ export default (app: HonoApp) =>
                     port: 6379
                 }
             });
-            await buildQueue.obliterate({ force: true });
+            await buildQueue.obliterate({force: true});
 
             try {
                 await buildQueue.add(projectId, {repoUrl, projectId});

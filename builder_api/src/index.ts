@@ -5,6 +5,7 @@ import {onError} from "./utils/error";
 import {Logger} from "./utils/logger";
 import {Context} from "hono";
 import builderRoute from "./module/builder/route";
+import authRoute from "./module/auth/route";
 
 const app = new OpenAPIHono<HonoTypes>();
 
@@ -30,13 +31,13 @@ app.get(
 
 app.doc('/doc', {
     info: {
-        title: 'Todo API',
+        title: 'React Builder API',
         version: 'v1'
     },
     openapi: '3.1.0'
 })
 
-
+authRoute(app)
 builderRoute(app)
 
 
