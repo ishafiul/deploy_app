@@ -62,7 +62,7 @@ export default (app: HonoApp) =>
             };
 
             // Sign and return the JWT
-            const accessToken = await sign(jwtPayload, c.env.JWT_SECRET);
+            const accessToken = await sign(jwtPayload, process.env.JWT_SECRET!);
 
             return c.json({accessToken}, 200);
         }

@@ -49,9 +49,7 @@ export default (app: HonoApp) =>
 
             const otpEntity = await auth.reqOtp(body, user);
 
-            if (body.email !== 'shafiulislam20@gmail.com') {
-                await mailService.sentOtp(body.email, otpEntity.otp);
-            }
+            await mailService.sentOtp(body.email, otpEntity.otp);
 
             return c.json({message: 'OTP sent successfully'}, 200);
         }
