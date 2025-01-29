@@ -3,7 +3,11 @@ import { Provider } from 'react-redux';
 import { store } from './store/store';
 import { LoginPage } from './pages/LoginPage';
 import { VerifyOtpPage } from './pages/VerifyOtpPage';
+import { DashboardPage } from './pages/DashboardPage';
+import { ProjectsPage } from './pages/ProjectsPage';
+import { SettingsPage } from './pages/SettingsPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { DashboardLayout } from './components/layout/DashboardLayout';
 import './App.css';
 
 function App() {
@@ -17,9 +21,29 @@ function App() {
             path="/"
             element={
               <ProtectedRoute>
-                <div className="p-4">
-                  <h1 className="text-2xl font-bold">Welcome to the Dashboard</h1>
-                </div>
+                <DashboardLayout>
+                  <DashboardPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <ProjectsPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <SettingsPage />
+                </DashboardLayout>
               </ProtectedRoute>
             }
           />
