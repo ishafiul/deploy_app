@@ -38,7 +38,6 @@ export default (app: HonoApp) =>
         async (c: HonoContext) => {
             const authService = new AuthService();
             const userService = new UserService();
-
             // Parse and validate the request body
             const bodyJson = await c.req.json<VerifyOtpDto>();
             const body = VerifyOtpSchema.parse(bodyJson);

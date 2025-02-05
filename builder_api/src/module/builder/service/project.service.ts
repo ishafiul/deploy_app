@@ -1,7 +1,7 @@
 import {LibSQLDatabase} from "drizzle-orm/libsql";
 import {getDbClient} from "../../../utils/db/client";
-import {projects} from "../../../db/schema";
-
+import {projects} from "../../../../drizzle/schema/projects.schema";
+import {v4 as uuidv4} from 'uuid';
 export class ProjectService {
     private readonly db: LibSQLDatabase;
 
@@ -16,13 +16,11 @@ export class ProjectService {
         projectId: string
     }) {
         await this.db.insert(projects).values({
-            id: projectId,
-            name,
-            repoUrl,
-            userId,
-            status: 'pending',
-            createdAt: new Date(),
-            updatedAt: new Date()
+            id: uuidv4(),
+            name: name,
+            repoUrl: repoUrl,
+            userId: userId,
+            status: 'pending'
         });
     }
 }

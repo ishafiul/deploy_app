@@ -4,6 +4,7 @@ import {Queue} from 'bullmq';
 import {HTTPException} from "hono/http-exception";
 import {AuthService} from "../../auth/service/auth.service";
 import {ProjectService} from "../service/project.service";
+import {authMiddleware} from "../../../middleware/auth";
 
 // Define request body schema
 const BuildBodySchema = z
@@ -37,7 +38,8 @@ export default (app: HonoApp) =>
         createRoute({
             method: "post",
             path: "/build",
-            security: [{bearerAuth: []}],
+            security: [{AUTH: []}],
+            middleware: [authMiddleware],
             tags: ["Build"],
             description: "Request to create a new project and add a build job to the queue",
             request: {

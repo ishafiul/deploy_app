@@ -26,15 +26,16 @@ const logQueue = new Queue('buildLogs', {
     },
 });
 
-async function sendLog(projectId: string, message: string, level: 'info' | 'error' | 'warning' = 'info') {
+async function sendLog(projectId: string, message: string, level: 'info' | 'error' | 'warning' = 'info',userId: string) {
     await logQueue.add(`log-${Date.now()}`, {
         projectId,
         message,
+        userId,
         level,
     });
 }
 
-async function buildDockerImage(repoUrl: string, projectId: string): Promise<void> {
+async function buildDockerImage(repoUrl: string, projectId: string,userId:string): Promise<void> {
     return new Promise((resolve, reject) => {
         docker.buildImage(
             {
@@ -55,21 +56,22 @@ async function buildDockerImage(repoUrl: string, projectId: string): Promise<voi
                     try {
                         const data = JSON.parse(chunk.toString());
                         if (data.stream) {
-                            sendLog(projectId, data.stream.trim(), 'info');
+                            console.log(data.stream.trim())
+                            sendLog(projectId, data.stream.trim(), 'info',userId);
                         } else if (data.error) {
-                            sendLog(projectId, data.error, 'error');
+                            sendLog(projectId, data.error, 'error',userId);
                         }
                     } catch (err) {
-                        sendLog(projectId, chunk.toString(), 'info');
+                        sendLog(projectId, chunk.toString(), 'info',userId);
                     }
                 });
 
                 result?.on('end', () => {
-                    sendLog(projectId, 'Docker image built successfully.', 'info');
+                    sendLog(projectId, 'Docker image built successfully.', 'info',userId);
                     resolve();
                 });
                 result?.on('error', (err: Error) => {
-                    sendLog(projectId, `Build error: ${err.message}`, 'error');
+                    sendLog(projectId, `Build error: ${err.message}`, 'error',userId);
                     reject(err);
                 });
             }
@@ -77,9 +79,9 @@ async function buildDockerImage(repoUrl: string, projectId: string): Promise<voi
     });
 }
 
-async function pullAndCreateContainer(repoUrl: string, projectId: string) {
+async function pullAndCreateContainer(repoUrl: string, projectId: string, userId: string): Promise<Docker.Container> {
     await docker.pull('node:20');
-    await buildDockerImage(repoUrl, projectId);
+    await buildDockerImage(repoUrl, projectId,userId);
 
     const container = await docker.createContainer({
         Image: 'node-app-image',
@@ -100,9 +102,11 @@ async function pullAndCreateContainer(repoUrl: string, projectId: string) {
 }
 
 async function monitorBuild(
+    userId:string,
     container: Docker.Container,
     projectId: string,
-    timeout = 1000 * 60 * 5
+    timeout = 1000 * 60 * 5,
+
 ): Promise<void> {
     let isBuildComplete = false;
     const startTime = Date.now();
@@ -117,25 +121,27 @@ async function monitorBuild(
 
         logs.on('data', (chunk) => {
             const output = chunk.toString();
-            sendLog(projectId, output, 'info');
+            console.log(output)
+            sendLog(projectId, output, 'info',userId);
             if (output.includes('Build complete!')) {
                 isBuildComplete = true;
             }
         });
 
         if (!isBuildComplete) {
-            sendLog(projectId, 'Waiting for build completion...', 'info');
+            await sendLog(projectId, 'Waiting for build completion...', 'info', userId);
             await new Promise((resolve) => setTimeout(resolve, 5000));
         }
     }
 
     if (!isBuildComplete) {
-        sendLog(projectId, 'Build process timed out', 'error');
+        await sendLog(projectId, 'Build process timed out', 'error', userId);
         throw new Error('Build process timed out');
     }
 }
 
 async function findAndUploadFiles(
+    userId:string,
     container: Docker.Container,
     path: string,
     projectId: string
@@ -162,20 +168,20 @@ async function findAndUploadFiles(
     stream.on('end', async () => {
         const uploadPromises = filePaths
             .filter((filePath) => filePath) // Ensure filePath is valid
-            .map((filePath) => uploadFileToS3(projectId, filePath, container));
+            .map((filePath) => uploadFileToS3(userId,projectId, filePath, container));
 
         try {
             await Promise.all(uploadPromises); // Wait for all uploads to complete
-            sendLog(projectId, 'All files uploaded successfully.', 'info');
+            await sendLog(projectId, 'All files uploaded successfully.', 'info', userId);
         } catch (uploadError: unknown) {
             const errorMessage = uploadError instanceof Error ? uploadError.message : 'Unknown error';
-            sendLog(projectId, `Error during file uploads: ${errorMessage}`, 'error');
+            await sendLog(projectId, `Error during file uploads: ${errorMessage}`, 'error', userId);
             console.error('Error during file uploads:', uploadError);
         }
     });
 
     stream.on('error', (err: Error) => {
-        sendLog(projectId, `Error finding files: ${err.message}`, 'error');
+        sendLog(projectId, `Error finding files: ${err.message}`, 'error',userId);
         console.error('Error finding files:', err);
     });
 }
@@ -192,6 +198,7 @@ const streamToBuffer = async (stream: Readable) => {
 };
 
 async function uploadFileToS3(
+    userId:string,
     projectId: string,
     filePath: string,
     container: Docker.Container
@@ -199,7 +206,7 @@ async function uploadFileToS3(
     try {
         const mimetype = mime.lookup(filePath);
         if (!mimetype) {
-            sendLog(projectId, `MIME type not found for file: ${filePath}`, 'error');
+            await sendLog(projectId, `MIME type not found for file: ${filePath}`, 'error', userId);
             return;
         }
 
@@ -243,19 +250,19 @@ async function uploadFileToS3(
                         // Handle stream end
                         stream.on('end', () => {
                             s3UploadStream.end(); // Close the upload stream
-                            sendLog(projectId, 'Closed stream', 'info');
+                            sendLog(projectId, 'Closed stream', 'info',userId);
                             resolve('Ready');
                         });
 
                         // Handle any errors
                         stderr.on('data', (errData: Buffer) => {
-                            sendLog(projectId, `Error output from the container: ${errData.toString()}`, 'error');
+                            sendLog(projectId, `Error output from the container: ${errData.toString()}`, 'error',userId);
                         });
 
                         // Inspect the exec for debugging if needed
                         exec.inspect(function (err: Error | null) {
                             if (err) {
-                                sendLog(projectId, `Execution Inspect failed! ${err.message}`, 'error');
+                                sendLog(projectId, `Execution Inspect failed! ${err.message}`, 'error',userId);
                             }
                         });
                     });
@@ -275,11 +282,11 @@ async function uploadFileToS3(
         await new Promise<AWS.S3.ManagedUpload.SendData>((resolve, reject) => {
             s3.upload(uploadParams).send((err, data) => {
                 if (err) {
-                    sendLog(projectId, `Error uploading file to S3: ${err.message}`, 'error');
+                    sendLog(projectId, `Error uploading file to S3: ${err.message}`, 'error',userId);
                     console.error('Detailed Error:', err);
                     reject(err);
                 } else {
-                    sendLog(projectId, `File uploaded to S3: ${data.Location}`, 'info');
+                    sendLog(projectId, `File uploaded to S3: ${data.Location}`, 'info',userId);
                     resolve(data);
                 }
             });
@@ -287,9 +294,8 @@ async function uploadFileToS3(
 
     } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        sendLog(projectId, `Error during S3 upload: ${errorMessage}`, 'error');
+        await sendLog(projectId, `Error during S3 upload: ${errorMessage}`, 'error', userId);
         console.error('Error during S3 upload:', error);
-        throw error;
     }
 }
 
@@ -297,22 +303,22 @@ async function uploadFileToS3(
 const worker = new Worker(
     'buildQueue',
     async (job) => {
-        const {repoUrl, projectId} = job.data;
+        const {repoUrl, projectId, userId} = job.data;
         try {
-            sendLog(projectId, 'Starting build process...', 'info');
-            const container = await pullAndCreateContainer(repoUrl, projectId);
-            await monitorBuild(container, projectId);
+            sendLog(projectId,'Starting build process...', 'info',userId);
+            const container = await pullAndCreateContainer(repoUrl, projectId, userId);
+            await monitorBuild(userId,container, projectId);
 
-            sendLog(projectId, 'Finding and uploading build files...', 'info');
+            sendLog(projectId, 'Finding and uploading build files...', 'info',userId);
             await new Promise(resolve => setTimeout(resolve, 10000));
-            await findAndUploadFiles(container, './dist', projectId);
+            await findAndUploadFiles(userId,container, './dist', projectId);
 
             await container.stop();
             await container.remove();
-            sendLog(projectId, 'Build completed successfully', 'info');
+            sendLog(projectId, 'Build completed successfully', 'info',userId);
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            sendLog(projectId, `Build failed: ${errorMessage}`, 'error');
+            sendLog(projectId, `Build failed: ${errorMessage}`, 'error',userId);
             console.error(`Build failed for project ${projectId}:`, error);
         }
     },

@@ -1,53 +1,17 @@
 import {HonoApp, upgradeWebSocket} from "../../../type";
 import {ServerWebSocket} from "bun";
-import {Queue, QueueEvents} from "bullmq";
-import {buildLogs} from "../../../db/schema";
-import {getDbClient} from "../../../utils/db/client";
 
 // Initialize log queue
-const logQueue = new Queue('buildLogs', {
-    connection: {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-    },
-});
-
-// Listen for completed jobs
-const queueEvents = new QueueEvents('buildLogs', {
-    connection: {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-    },
-});
-
-queueEvents.on('completed', async ({ jobId }) => {
-    const job = await logQueue.getJob(jobId);
-    if (!job) return;
-
-    const { projectId, userId, message, level, timestamp } = job.data;
-    const db = getDbClient();
-    // Store log in database
-    await db.insert(buildLogs).values({
-        projectId,
-        message,
-        level,
-        timestamp,
-    });
-
-    /*// Send log update to the user's WebSocket connection if they are online
-    const ws = activeConnections.get(userId);
-    if (ws) {
-        ws.send(JSON.stringify({ projectId, message, level, timestamp }));
-    }*/
-});
 
 export default (app: HonoApp) => {
     app.get(
         '/build/:projectId/logs/ws',
         upgradeWebSocket((c) => {
+
             return {
                 onOpen(event, ws) {
                     const rawWs = ws.raw as ServerWebSocket;
+                    rawWs.subscribe("topic");
                     console.log(`User  connected.`);
                 },
                 onMessage(event, ws) {

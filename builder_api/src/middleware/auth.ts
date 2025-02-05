@@ -4,6 +4,6 @@ import {Next} from "hono";
 
 
 export const authMiddleware = async (c: HonoContext, next: Next) => {
-    const jwtMiddleware = jwt({secret: c.env.JWT_SECRET});
+    const jwtMiddleware = jwt({secret: process.env.JWT_SECRET!});
     return jwtMiddleware(c, next);
 };
