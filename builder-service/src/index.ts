@@ -1,5 +1,5 @@
 import Docker from 'dockerode';
-import {Worker} from 'bullmq';
+import {Worker, Queue} from 'bullmq';
 import {Readable} from 'stream';
 import AWS from 'aws-sdk';
 import dotenv from 'dotenv';
@@ -18,7 +18,23 @@ const s3 = new AWS.S3({
     },
 });
 
-async function buildDockerImage(repoUrl: string): Promise<void> {
+// Initialize log queue
+const logQueue = new Queue('buildLogs', {
+    connection: {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+    },
+});
+
+async function sendLog(projectId: string, message: string, level: 'info' | 'error' | 'warning' = 'info') {
+    await logQueue.add(`log-${Date.now()}`, {
+        projectId,
+        message,
+        level,
+    });
+}
+
+async function buildDockerImage(repoUrl: string, projectId: string): Promise<void> {
     return new Promise((resolve, reject) => {
         docker.buildImage(
             {
@@ -34,20 +50,36 @@ async function buildDockerImage(repoUrl: string): Promise<void> {
                     return reject(error);
                 }
 
-                result?.pipe(process.stdout);
+                // Capture and send build logs
+                result?.on('data', (chunk) => {
+                    try {
+                        const data = JSON.parse(chunk.toString());
+                        if (data.stream) {
+                            sendLog(projectId, data.stream.trim(), 'info');
+                        } else if (data.error) {
+                            sendLog(projectId, data.error, 'error');
+                        }
+                    } catch (err) {
+                        sendLog(projectId, chunk.toString(), 'info');
+                    }
+                });
+
                 result?.on('end', () => {
-                    console.log('Docker image built successfully.');
+                    sendLog(projectId, 'Docker image built successfully.', 'info');
                     resolve();
                 });
-                result?.on('error', reject);
+                result?.on('error', (err: Error) => {
+                    sendLog(projectId, `Build error: ${err.message}`, 'error');
+                    reject(err);
+                });
             }
         );
     });
 }
 
-async function pullAndCreateContainer(repoUrl: string) {
-    await docker.pull('node:20'); // Pull base Node.js image
-    await buildDockerImage(repoUrl); // Build the Docker image
+async function pullAndCreateContainer(repoUrl: string, projectId: string) {
+    await docker.pull('node:20');
+    await buildDockerImage(repoUrl, projectId);
 
     const container = await docker.createContainer({
         Image: 'node-app-image',
@@ -58,8 +90,8 @@ async function pullAndCreateContainer(repoUrl: string) {
         ],
         Tty: false,
         HostConfig: {
-            Memory: 512 * 1024 * 1024, // 512MB memory limit
-            NanoCpus: 1000000000, // 1 CPU core limit
+            Memory: 512 * 1024 * 1024,
+            NanoCpus: 1000000000,
         },
     });
 
@@ -69,6 +101,7 @@ async function pullAndCreateContainer(repoUrl: string) {
 
 async function monitorBuild(
     container: Docker.Container,
+    projectId: string,
     timeout = 1000 * 60 * 5
 ): Promise<void> {
     let isBuildComplete = false;
@@ -84,19 +117,20 @@ async function monitorBuild(
 
         logs.on('data', (chunk) => {
             const output = chunk.toString();
-            console.log(output);
+            sendLog(projectId, output, 'info');
             if (output.includes('Build complete!')) {
                 isBuildComplete = true;
             }
         });
 
         if (!isBuildComplete) {
-            console.log('Waiting for build completion...');
+            sendLog(projectId, 'Waiting for build completion...', 'info');
             await new Promise((resolve) => setTimeout(resolve, 5000));
         }
     }
 
     if (!isBuildComplete) {
+        sendLog(projectId, 'Build process timed out', 'error');
         throw new Error('Build process timed out');
     }
 }
@@ -132,13 +166,16 @@ async function findAndUploadFiles(
 
         try {
             await Promise.all(uploadPromises); // Wait for all uploads to complete
-            console.log('All files uploaded successfully.');
-        } catch (uploadError) {
+            sendLog(projectId, 'All files uploaded successfully.', 'info');
+        } catch (uploadError: unknown) {
+            const errorMessage = uploadError instanceof Error ? uploadError.message : 'Unknown error';
+            sendLog(projectId, `Error during file uploads: ${errorMessage}`, 'error');
             console.error('Error during file uploads:', uploadError);
         }
     });
 
-    stream.on('error', (err) => {
+    stream.on('error', (err: Error) => {
+        sendLog(projectId, `Error finding files: ${err.message}`, 'error');
         console.error('Error finding files:', err);
     });
 }
@@ -162,7 +199,7 @@ async function uploadFileToS3(
     try {
         const mimetype = mime.lookup(filePath);
         if (!mimetype) {
-            console.error('MIME type not found for file:', filePath);
+            sendLog(projectId, `MIME type not found for file: ${filePath}`, 'error');
             return;
         }
 
@@ -183,13 +220,13 @@ async function uploadFileToS3(
         await new Promise((resolve, reject) => {
             container.exec(options, function (err, exec) {
                 if (err) {
-                    reject('Container exec failed!');
+                    reject(new Error('Container exec failed!'));
                     return;
                 }
                 if (exec) {
-                    exec.start({hijack: true}, function (err: any, stream: any) {
+                    exec.start({hijack: true}, function (err: Error | null, stream: any) {
                         if (err) {
-                            reject('Container start execution failed!');
+                            reject(new Error('Container start execution failed!'));
                             return;
                         }
 
@@ -206,19 +243,19 @@ async function uploadFileToS3(
                         // Handle stream end
                         stream.on('end', () => {
                             s3UploadStream.end(); // Close the upload stream
-                            console.log('Closed stream');
+                            sendLog(projectId, 'Closed stream', 'info');
                             resolve('Ready');
                         });
 
                         // Handle any errors
-                        stderr.on('data', (errData: { toString: () => any; }) => {
-                            console.error('Error output from the container:', errData.toString());
+                        stderr.on('data', (errData: Buffer) => {
+                            sendLog(projectId, `Error output from the container: ${errData.toString()}`, 'error');
                         });
 
                         // Inspect the exec for debugging if needed
-                        exec.inspect(function (err, data) {
+                        exec.inspect(function (err: Error | null) {
                             if (err) {
-                                console.error('Execution Inspect failed!', err);
+                                sendLog(projectId, `Execution Inspect failed! ${err.message}`, 'error');
                             }
                         });
                     });
@@ -227,25 +264,32 @@ async function uploadFileToS3(
         });
 
         // Upload the collected data to S3
-        const uploadParams = {
+        const uploadParams: AWS.S3.PutObjectRequest = {
             Bucket: process.env.R2_BUCKET!,
             Key: s3Key,
-            Body: s3UploadStream,  // Stream the upload directly from the output
+            Body: s3UploadStream,
             ContentType: mimetype,
         };
 
         // Start the upload
-        s3.upload(uploadParams, (err: { message: any; }, data: { Location: any; }) => {
-            if (err) {
-                console.error('Error uploading file to S3:', err.message);
-                console.error('Detailed Error:', err);
-            } else {
-                console.log('File uploaded to S3:', data.Location);
-            }
+        await new Promise<AWS.S3.ManagedUpload.SendData>((resolve, reject) => {
+            s3.upload(uploadParams).send((err, data) => {
+                if (err) {
+                    sendLog(projectId, `Error uploading file to S3: ${err.message}`, 'error');
+                    console.error('Detailed Error:', err);
+                    reject(err);
+                } else {
+                    sendLog(projectId, `File uploaded to S3: ${data.Location}`, 'info');
+                    resolve(data);
+                }
+            });
         });
 
-    } catch (error) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        sendLog(projectId, `Error during S3 upload: ${errorMessage}`, 'error');
         console.error('Error during S3 upload:', error);
+        throw error;
     }
 }
 
@@ -255,22 +299,28 @@ const worker = new Worker(
     async (job) => {
         const {repoUrl, projectId} = job.data;
         try {
-            const container = await pullAndCreateContainer(repoUrl);
-            await monitorBuild(container);
+            sendLog(projectId, 'Starting build process...', 'info');
+            const container = await pullAndCreateContainer(repoUrl, projectId);
+            await monitorBuild(container, projectId);
 
-            console.log('Finding and uploading build files...');
-            // Wait for some time before finding files to allow time for the build process to complete
+            sendLog(projectId, 'Finding and uploading build files...', 'info');
             await new Promise(resolve => setTimeout(resolve, 10000));
             await findAndUploadFiles(container, './dist', projectId);
 
             await container.stop();
             await container.remove();
-        } catch (error) {
+            sendLog(projectId, 'Build completed successfully', 'info');
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            sendLog(projectId, `Build failed: ${errorMessage}`, 'error');
             console.error(`Build failed for project ${projectId}:`, error);
         }
     },
     {
-        connection: {host: '192.168.0.101', port: 6379},
+        connection: {
+            host: process.env.REDIS_HOST || 'localhost',
+            port: parseInt(process.env.REDIS_PORT || '6379'),
+        },
     }
 );
 

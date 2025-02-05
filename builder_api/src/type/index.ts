@@ -1,6 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { Context } from 'hono';
-
+import {createBunWebSocket} from "hono/bun";
+export const { upgradeWebSocket, websocket } = createBunWebSocket()
 export type Env = {
     TURSO_AUTH_TOKEN: string;
     TURSO_URL: string;
