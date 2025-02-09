@@ -1,9 +1,8 @@
 class WebSocketService {
-  private ws: WebSocket | null = null;
+  public ws: WebSocket | null = null;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectTimeout = 3000; // 3 seconds
-  private listeners: { [key: string]: ((data: any) => void)[] } = {};
 
   connect() {
     const userId = localStorage.getItem('userId');
@@ -18,13 +17,10 @@ class WebSocketService {
     this.ws.onopen = () => {
       console.log('WebSocket connection established');
       this.reconnectAttempts = 0;
-      this.emit('connection', { status: 'connected' });
     };
 
-    this.ws.onmessage = (event) => {
+    this.ws.onmessage = (_) => {
       try {
-        const data = JSON.parse(event.data);
-        this.emit(data.type, data);
       } catch (error) {
         console.error('Failed to parse WebSocket message:', error);
       }
@@ -32,13 +28,11 @@ class WebSocketService {
 
     this.ws.onclose = () => {
       console.log('WebSocket connection closed');
-      this.emit('connection', { status: 'disconnected' });
       this.handleReconnect();
     };
 
     this.ws.onerror = (error) => {
       console.error('WebSocket error:', error);
-      this.emit('error', error);
     };
   }
 
@@ -49,7 +43,6 @@ class WebSocketService {
       setTimeout(() => this.connect(), this.reconnectTimeout);
     } else {
       console.error('Max reconnection attempts reached');
-      this.emit('connection', { status: 'failed' });
     }
   }
 
@@ -57,33 +50,6 @@ class WebSocketService {
     if (this.ws) {
       this.ws.close();
       this.ws = null;
-    }
-  }
-
-  on(event: string, callback: (data: any) => void) {
-    if (!this.listeners[event]) {
-      this.listeners[event] = [];
-    }
-    this.listeners[event].push(callback);
-  }
-
-  off(event: string, callback: (data: any) => void) {
-    if (this.listeners[event]) {
-      this.listeners[event] = this.listeners[event].filter(cb => cb !== callback);
-    }
-  }
-
-  private emit(event: string, data: any) {
-    if (this.listeners[event]) {
-      this.listeners[event].forEach(callback => callback(data));
-    }
-  }
-
-  send(data: any) {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(data));
-    } else {
-      console.error('WebSocket is not connected');
     }
   }
 

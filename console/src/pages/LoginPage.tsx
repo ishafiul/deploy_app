@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { AppDispatch, RootState } from '../store/store';
-import { createDeviceUuid, requestOtp, clearError } from '../store/slices/authSlice';
+import { createDeviceUuid, requestOtp } from '../store/slices/authSlice';
 
 export const LoginPage = () => {
   const [email, setEmail] = useState('');
