@@ -6,9 +6,11 @@ import { VerifyOtpPage } from './pages/VerifyOtpPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import ProjectDetailsPage from './pages/ProjectDetailsPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import './App.css';
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   return (
@@ -38,6 +40,16 @@ function App() {
             }
           />
           <Route
+            path="/projects/:projectId"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <ProjectDetailsPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/settings"
             element={
               <ProtectedRoute>
@@ -50,6 +62,17 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          className: 'bg-zinc-900 text-white border border-zinc-800',
+          duration: 4000,
+          style: {
+            background: '#18181b',
+            color: '#fff',
+          },
+        }}
+      />
     </Provider>
   );
 }

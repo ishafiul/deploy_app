@@ -30,7 +30,7 @@ export default (app: HonoApp) =>
                 200: {
                     description: 'Access Token',
                     content: {
-                        'application/json': {schema: z.object({accessToken: z.string()})},
+                        'application/json': {schema: z.object({accessToken: z.string(),userId: z.string()})},
                     },
                 },
             },
@@ -63,6 +63,6 @@ export default (app: HonoApp) =>
             // Sign and return the JWT
             const accessToken = await sign(jwtPayload, process.env.JWT_SECRET!);
 
-            return c.json({accessToken}, 200);
+            return c.json({accessToken,userId:user.id}, 200);
         }
     );

@@ -10,32 +10,41 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-black">
-      <Navbar onMenuClick={() => setSidebarOpen(true)} />
-      
+    <div className="min-h-screen bg-[#0A0A0A]">
+      {/* Navbar */}
+      <div className="fixed top-0 left-0 right-0 h-16 bg-[#111111] border-b border-[#1D1D1D] z-50">
+        <Navbar onMenuClick={() => setSidebarOpen(true)} />
+      </div>
+
+      {/* Sidebar */}
+      <div
+        className={`fixed top-16 left-0 bottom-0 w-64 bg-[#111111] border-r border-[#1D1D1D] transform transition-transform duration-200 ease-in-out z-40
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+      >
+        <Sidebar onClose={() => setSidebarOpen(false)} />
+      </div>
+
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
-      <div className={`
-        fixed top-16 left-0 w-64 h-[calc(100vh-4rem)] bg-zinc-900 border-r border-zinc-800 
-        transform transition-transform duration-200 ease-in-out z-50
-        lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
-        <Sidebar onClose={() => setSidebarOpen(false)} />
+      {/* Main content */}
+      <div className="lg:pl-64 pt-16">
+        <main className="min-h-[calc(100vh-4rem)] bg-[#0A0A0A]">
+          <div className="max-w-screen-2xl mx-auto p-6">
+            {children}
+          </div>
+        </main>
       </div>
 
-      {/* Main content */}
-      <main className="min-h-screen w-full">
-        <div className="p-4 md:p-6 lg:p-8 w-full mx-auto ">
-          {children}
-        </div>
-      </main>
+      {/* Version number */}
+      <div className="fixed bottom-4 left-4 text-xs text-zinc-600 lg:pl-64">
+        Version 1.0.0
+      </div>
     </div>
   );
 }; 

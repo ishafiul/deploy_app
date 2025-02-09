@@ -1,17 +1,38 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { authService } from '../../services/auth.service';
+import { websocketService } from '../../services/websocket.service';
 import { AuthState, CreateDeviceUuidDto, RequestOtpDto, VerifyOtpDto } from '../../types/auth.types';
 
+// Get stored values
 const accessToken = localStorage.getItem('accessToken');
+const deviceUuid = localStorage.getItem('deviceUuid');
+const email = localStorage.getItem('email');
+const userId = localStorage.getItem('userId');
+
+// Validate stored token
+const validateStoredToken = () => {
+  if (!accessToken || !userId) {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('userId');
+    return false;
+  }
+  return true;
+};
 
 const initialState: AuthState = {
-  isAuthenticated: !!accessToken,
-  deviceUuid: localStorage.getItem('deviceUuid'),
-  email: localStorage.getItem('email'),
-  accessToken: accessToken,
+  isAuthenticated: validateStoredToken(),
+  deviceUuid,
+  email,
+  accessToken: validateStoredToken() ? accessToken : null,
+  userId: validateStoredToken() ? userId : null,
   loading: false,
   error: null,
 };
+
+// If user is already authenticated, connect to WebSocket
+if (initialState.isAuthenticated && initialState.userId) {
+  websocketService.connect();
+}
 
 export const createDeviceUuid = createAsyncThunk(
   'auth/createDeviceUuid',
@@ -41,6 +62,7 @@ export const logout = createAsyncThunk(
   'auth/logout',
   async () => {
     await authService.logout();
+    websocketService.disconnect();
     localStorage.clear();
   }
 );
@@ -51,6 +73,13 @@ const authSlice = createSlice({
   reducers: {
     clearError: (state) => {
       state.error = null;
+    },
+    clearAuth: (state) => {
+      state.isAuthenticated = false;
+      state.accessToken = null;
+      state.userId = null;
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('userId');
     },
   },
   extraReducers: (builder) => {
@@ -92,7 +121,11 @@ const authSlice = createSlice({
         state.loading = false;
         state.isAuthenticated = true;
         state.accessToken = action.payload.accessToken;
+        state.userId = action.payload.userId;
         localStorage.setItem('accessToken', action.payload.accessToken);
+        localStorage.setItem('userId', action.payload.userId);
+        // Connect to WebSocket after successful login
+        websocketService.connect();
       })
       .addCase(verifyOtp.rejected, (state, action) => {
         state.loading = false;
@@ -104,9 +137,10 @@ const authSlice = createSlice({
         state.deviceUuid = null;
         state.email = null;
         state.accessToken = null;
+        state.userId = null;
       });
   },
 });
 
-export const { clearError } = authSlice.actions;
+export const { clearError, clearAuth } = authSlice.actions;
 export default authSlice.reducer; 

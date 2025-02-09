@@ -9,6 +9,7 @@ import authRoute from "./module/auth/route";
 import { WebSocketHandler } from "bun";
 import {BunWebSocketData} from "hono/dist/types/adapter/bun/websocket";
 import bulmq from "./utils/bulmq";
+import projectRoute from "./module/project/route";
 
 const app = new OpenAPIHono<HonoTypes>();
 
@@ -57,6 +58,7 @@ app.doc('/doc', {
 bulmq()
 authRoute(app)
 builderRoute(app)
+projectRoute(app)
 app.onError(async (err, c) => {
     const logger = new Logger("ROOT");
     return onError(logger, err, c);

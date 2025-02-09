@@ -25,10 +25,16 @@ export interface AuthState {
   deviceUuid: string | null;
   email: string | null;
   accessToken: string | null;
+  userId: string | null;
   loading: boolean;
   error: string | null;
 }
 
 export interface AuthResponse {
   accessToken: string;
+}
+
+export interface VerifyOtpResponse {
+  accessToken: string;
+  userId: string;
 } 
