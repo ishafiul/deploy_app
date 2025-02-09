@@ -24,6 +24,18 @@ interface ProjectsResponse {
   projects: Project[];
 }
 
+interface BuildLogsResponse {
+  success: boolean;
+  data: Array<{
+    id: string;
+    projectId: string;
+    userId: string;
+    message: string;
+    level: string;
+    timestamp: string;
+  }>;
+}
+
 export const projectService = {
   createProject: async (data: CreateProjectData): Promise<CreateProjectResponse> => {
     const response = await api.post<CreateProjectResponse>('/build', {
@@ -64,6 +76,26 @@ export const projectService = {
       return response.data;
     } catch (error) {
       console.error('Error in getProject:', error);
+      throw error;
+    }
+  },
+
+  getBuildLogs: async (projectId: string): Promise<string[]> => {
+    try {
+      console.log(`Making API request to /build/logs/${projectId}`);
+      const response = await api.get<BuildLogsResponse>(`/build/logs/${projectId}`);
+      console.log('Build logs API response:', response.data);
+      
+      if (response.data.success && Array.isArray(response.data.data)) {
+        // Map the logs array to just the messages, filtering out empty messages
+        return response.data.data
+          .map(log => `[${log.level}] ${log.message}`)
+          .filter(message => message.trim() !== '');
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Error in getBuildLogs:', error);
       throw error;
     }
   }

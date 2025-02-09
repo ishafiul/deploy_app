@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useState,} from 'react';
 import { projectService } from '../services/project.service';
+import { websocketService } from '../services/websocket.service';
+import { useNavigate, useParams } from "react-router-dom";
 
 interface Project {
   id: string;
@@ -16,6 +17,10 @@ interface BuildLog {
   message: string;
 }
 
+interface WebSocketMessage {
+  buildLogs: BuildLog;
+}
+
 export default function ProjectDetailsPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
@@ -24,13 +29,22 @@ export default function ProjectDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Fetch project and initial logs
   useEffect(() => {
     const fetchProject = async () => {
       try {
         if (!projectId) return;
+
+        // Fetch project details
         const data = await projectService.getProject(projectId);
         setProject(data);
+
+        // Fetch build logs
+        const logs = await projectService.getBuildLogs(projectId);
+        console.log('Initial logs fetched:', logs);
+        setBuildLogs(logs);
       } catch (err) {
+        console.error('Error fetching project or logs:', err);
         setError('Failed to load project details');
       } finally {
         setLoading(false);
@@ -40,31 +54,58 @@ export default function ProjectDetailsPage() {
     fetchProject();
   }, [projectId]);
 
+  // Listen for WebSocket build log messages
   useEffect(() => {
     if (!projectId) return;
 
-    // Connect to WebSocket
-    const ws = new WebSocket(import.meta.env.VITE_WS_URL || 'ws://localhost:3000');
+    console.log('Setting up WebSocket listener for projectId:', projectId);
 
-    ws.onopen = () => {
-      console.log('Connected to WebSocket');
-    };
+    const handleBuildLogs = (event: MessageEvent | string | any) => {
+      console.log('Raw WebSocket message:', event);
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.buildLogs && data.buildLogs.projectId === projectId) {
-        setBuildLogs((prev) => [...prev, data.buildLogs.message]);
+      let data: WebSocketMessage;
+      try {
+        // If the event is already parsed JSON
+        if (typeof event === 'object' && 'data' in event) {
+          data = JSON.parse(event.data);
+        } else if (typeof event === 'string') {
+          data = JSON.parse(event);
+        } else {
+          data = event;
+        }
+
+        console.log('Parsed data:', data);
+
+        if (data.buildLogs && data.buildLogs.projectId === projectId) {
+          console.log('Matching build log:', data.buildLogs.message);
+          setBuildLogs(prevLogs => [...prevLogs, data.buildLogs.message]);
+        }
+      } catch (error) {
+        console.error('Error handling WebSocket message:', error);
       }
     };
 
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
+    // Subscribe to raw WebSocket messages
+    websocketService.on('onmessage', handleBuildLogs);
 
+    // Cleanup subscription
     return () => {
-      ws.close();
+      websocketService.off('onmessage', handleBuildLogs);
     };
   }, [projectId]);
+
+  // Debug log for buildLogs state changes
+  useEffect(() => {
+    console.log('buildLogs state updated:', buildLogs);
+  }, [buildLogs]);
+
+  // Auto-scroll to bottom when new logs arrive
+  useEffect(() => {
+    const logContainer = document.querySelector('.log-container');
+    if (logContainer) {
+      logContainer.scrollTop = logContainer.scrollHeight;
+    }
+  }, [buildLogs]);
 
   if (loading) {
     return (
@@ -127,10 +168,10 @@ export default function ProjectDetailsPage() {
               <div className="flex items-center mt-1 space-x-2 text-sm text-zinc-400">
                 <span>Repository</span>
                 <span>•</span>
-                <a 
-                  href={project.repoUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
+                <a
+                  href={project.repoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="hover:text-white transition-colors"
                 >
                   {project.repoUrl.replace('https://github.com/', '')}
@@ -167,13 +208,16 @@ export default function ProjectDetailsPage() {
           <span className="text-xs text-zinc-500">Real-time updates</span>
         </div>
         <div className="flex-1 bg-[#111111] rounded-lg border border-[#1D1D1D] overflow-hidden">
-          <div className="px-4 py-2 border-b border-[#1D1D1D] flex items-center">
+          <div className="px-4 py-2 border-b border-[#1D1D1D] flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 rounded-full bg-green-500"></div>
               <span className="text-sm text-zinc-400">Build Output</span>
             </div>
+            <div className="text-xs text-zinc-500">
+              {buildLogs.length} messages
+            </div>
           </div>
-          <div className="p-6 h-[calc(100vh-250px)] overflow-y-auto font-mono text-sm bg-[#0A0A0A]">
+          <div className="log-container p-6 h-[calc(100vh-250px)] overflow-y-auto font-mono text-sm bg-[#0A0A0A]">
             {buildLogs.length === 0 ? (
               <div className="flex items-center justify-center h-full text-zinc-600">
                 <p>Waiting for build logs...</p>
@@ -181,7 +225,10 @@ export default function ProjectDetailsPage() {
             ) : (
               <div className="space-y-1">
                 {buildLogs.map((log, index) => (
-                  <div key={index} className="text-zinc-300">
+                  <div
+                    key={`${index}-${log}`}
+                    className="text-zinc-300 font-mono whitespace-pre-wrap break-words"
+                  >
                     {log}
                   </div>
                 ))}
@@ -192,4 +239,4 @@ export default function ProjectDetailsPage() {
       </div>
     </div>
   );
-} 
+}
