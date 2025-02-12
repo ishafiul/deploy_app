@@ -1,0 +1,17 @@
+
+services:
+  builder-service:
+    image: ishafiul/builder-service
+    container_name: builder_service
+    restart: always
+    environment:
+      - R2_ACCOUNT_ID=
+      - R2_ACCESS_KEY_ID=
+      - R2_ACCESS_KEY_SECRET=
+      - R2_BUCKET=
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - RADIS_HOST=
+      - RADIS_PORT=
+    volumes:
+      - ./app:/app
+      - /var/run/docker.sock:/var/run/docker.sock
