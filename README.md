@@ -24,7 +24,33 @@ The project consists of four main services:
 - Turso Database
 - Git
 
-## Development Setup Instructions
+## Quick Start with Make
+
+The project includes a Makefile to simplify the development setup and running process. Here are the available commands:
+
+```bash
+# First time setup (install dependencies and create .env files)
+make setup
+
+# Start all services in development mode
+make dev
+
+# Stop all services
+make stop
+
+# Clean the project (remove node_modules and build directories)
+make clean
+
+# Start only the builder service with Docker
+make docker-builder
+
+# Show all available commands
+make help
+```
+
+Note: After running `make setup`, make sure to configure your `.env` files before starting the services.
+
+## Manual Development Setup Instructions
 
 ### 1. Builder Service
 ```bash
