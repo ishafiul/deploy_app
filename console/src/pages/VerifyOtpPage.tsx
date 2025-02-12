@@ -131,7 +131,6 @@ export const VerifyOtpPage = () => {
               </div>
             </div>
           </div>
-
           <p className="mt-8 text-center text-sm text-gray-400">
             Having trouble? <a href="mailto:support@example.com" className="font-medium text-blue-500 hover:text-blue-400">Contact Support</a>
           </p>
