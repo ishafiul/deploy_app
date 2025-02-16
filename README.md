@@ -1,4 +1,4 @@
-# React App Builder with Reverse Proxy
+# CSR App Builder with Reverse Proxy
 
 This project builds and deploys a React application from a public Git
 repository and sets up a reverse proxy on a subdomain to make the app accessible via a browser. It is inspired by the [I built Vercel in 2 Hours (System Design, AWS, Docker, Redis, S3)](https://www.youtube.com/watch?v=0A_JpLYG7hM&t=385s)
@@ -8,6 +8,13 @@ Built using [dockerode](https://www.npmjs.com/package/dockerode/v/2.5.5) for Doc
 ## Features
 - **React App Builder:** Builds a React application from a specified Git repository.
 - **Subdomain Reverse Proxy:** Deploys the app to a subdomain to make it accessible to the user.
+
+## Supported Frameworks
+- React
+- Vue
+- Svelte
+- Solid
+- Flutter
 
 ## Project Structure
 The project consists of four main services:
@@ -116,11 +123,11 @@ npm run dev
 Each service requires specific environment variables. Make sure to copy the respective `.env.example` files to `.env` and fill in the required values.
 
 ## TODO
-- **Flutter Build Support:** Add support for building Flutter applications.
-- **DNS Management:** Implement automated DNS management for domain setup.
-- **Backend Server Deployment:** Enable deployment and running of backend services in Docker containers.
-- **Log Management:** Add log management for better tracking and debugging.
-- **Multi-Runtime Support:** Support multiple runtimes (Bun and Deno).
-- **Multi-Framework Support:** Expand support to other frontend frameworks like Vue, Angular, etc.
-- **GitHub Webhook Integration:** Automate build and deployment for every new commit with GitHub webhooks.
-
+- [ ] **Multiple Deployment For Same App:** Allow multiple deployments for the same app and manage deployment history and tags.
+- [x] **Flutter Build Support:** Add support for building Flutter applications.
+- [ ] **DNS Management:** Implement automated DNS management for domain setup.
+- [ ] **Backend Server Deployment:** Enable deployment and running of backend services in Docker containers.
+- [x] **Log Management:** Add log management for better tracking and debugging.
+- [ ] **Multi-Runtime Support:** Support multiple runtimes (Bun and Deno).
+- [x] **Multi-Framework Support:** Expand support to other frontend frameworks like Vue, Angular, etc.
+- [ ] **GitHub Webhook Integration:** Automate build and deployment for every new commit with GitHub webhooks.
