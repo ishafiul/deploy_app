@@ -142,6 +142,7 @@ export class DockerService {
     }
 
     async findFiles(container: Docker.Container, path: string): Promise<string[]> {
+        console.log(container)
         const exec = await container.exec({
             Cmd: ['find', path],
             AttachStdout: true,

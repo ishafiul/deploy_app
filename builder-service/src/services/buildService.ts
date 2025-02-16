@@ -24,7 +24,7 @@ export class BuildService {
             
             await sendLog(projectId, 'Finding and uploading build files...', 'info', userId);
             const files = await this.dockerService.findFiles(container, buildConfig.buildPath);
-            
+            console.log(files)
             await Promise.all(
                 files.map(filePath => this.s3Service.uploadFile(userId, projectId, filePath, container))
             );

@@ -50,7 +50,7 @@ export const frameworkConfigs: Record<Framework, FrameworkConfig> = {
         dockerfilePath: `${baseDir}/src/config/docker/frameworks/flutter`,
         baseImage: 'cirrusci/flutter:stable',
         imageName: 'flutter-app-image',
-        buildCommand: 'build web',
+        buildCommand: 'build web --release',
         outputDir: 'build/web',
         env: {}
     },
