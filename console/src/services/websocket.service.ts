@@ -11,7 +11,7 @@ class WebSocketService {
       return;
     }
 
-    const wsUrl = `ws://localhost:3000/${userId}`; // Replace with your actual WebSocket URL
+    const wsUrl = `wss://api.ishaf.store/${userId}`; // Replace with your actual WebSocket URL
     this.ws = new WebSocket(wsUrl);
 
     this.ws.onopen = () => {

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:3000'; // Replace with your actual API URL
+const BASE_URL = 'https://api.ishaf.store'; // Replace with your actual API URL
 
 // Create a separate axios instance for refresh token requests
 const refreshApi = axios.create({
