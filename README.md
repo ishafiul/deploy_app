@@ -1,6 +1,6 @@
 # CSR App Builder with Reverse Proxy
 
-This project builds and deploys a React application from a public Git
+This project builds and deploys Web application from Git
 repository and sets up a reverse proxy on a subdomain to make the app accessible via a browser. It is inspired by the [I built Vercel in 2 Hours (System Design, AWS, Docker, Redis, S3)](https://www.youtube.com/watch?v=0A_JpLYG7hM&t=385s)
 video, but, due to AWS account constraints, it utilizes custom infrastructure.
 Built using [dockerode](https://www.npmjs.com/package/dockerode/v/2.5.5) for Docker container management and Redis task queuing.
