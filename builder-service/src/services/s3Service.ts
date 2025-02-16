@@ -30,12 +30,12 @@ export class S3Service {
                 return;
             }
 
-            const s3Key = `${projectId}/${filePath.replace('./dist/', '')}`;
+            const s3Key = `${projectId}/${filePath.replace('/app/dist/', '')}`;
             const s3UploadStream = new PassThrough();
 
             // Get file stream from container
             const options = {
-                Cmd: ['cat', `/app/${filePath}`],
+                Cmd: ['cat', filePath],
                 Tty: false,
                 AttachStdout: true,
                 AttachStderr: true,

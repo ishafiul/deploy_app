@@ -20,9 +20,18 @@ RUN npm install
 RUN npm run ${BUILD_COMMAND}
 
 # Verify and move build output
-RUN test -d ${BUILD_OUTPUT_DIR} || (echo "Build failed: ${BUILD_OUTPUT_DIR} directory not found" && exit 1) && \
-    mkdir -p /app/dist && \
-    cp -r ${BUILD_OUTPUT_DIR}/* /app/dist
+RUN set -ex; \
+    echo "Current working directory contents:"; ls -la; \
+    echo "Expecting build output directory: ${BUILD_OUTPUT_DIR}"; \
+    if [ -d "${BUILD_OUTPUT_DIR}" ]; then \
+      echo "Found ${BUILD_OUTPUT_DIR} directory. Contents:"; ls -la ${BUILD_OUTPUT_DIR}; \
+    else \
+      echo "Build failed: ${BUILD_OUTPUT_DIR} directory not found" && exit 1; \
+    fi; \
+    mkdir -p /app/dist; \
+    cp -r ${BUILD_OUTPUT_DIR}/* /app/dist; \
+    echo "Build output successfully copied to /app/dist"; \
+    echo "Contents of /app/dist:"; ls -la /app/dist
 
 # Signal completion
 CMD ["echo", "Build complete"] 

@@ -15,7 +15,7 @@ const worker = new Worker(
     async (job) => {
         const buildConfig: BuildConfig = {
             ...job.data,
-            buildPath: './dist'
+            buildPath: '/app/dist'
         };
         await buildService.processBuild(buildConfig);
     },
