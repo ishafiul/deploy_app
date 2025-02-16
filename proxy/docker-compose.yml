@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ishafiul/builder-proxy-public:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - BASE_PATH=${BASE_PATH}
+    restart: unless-stopped 

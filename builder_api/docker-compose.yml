@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ishafiul/builder-api-public:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - TURSO_AUTH_TOKEN=${TURSO_AUTH_TOKEN}
+      - TURSO_URL=${TURSO_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - SERVER_KEY=${SERVER_KEY}
+      - REDIS_HOST=redis-builder
+      - REDIS_PORT=6379
+      - PROXY_HOST=${PROXY_HOST}
+    depends_on:
+      - redis-builder
+    restart: unless-stopped
+
+  redis-builder:
+    image: redis:7-alpine
+    ports:
+      - "6370:6379"
+    volumes:
+    - /mnt/sdb2/redis-data:/data
+    restart: unless-stopped

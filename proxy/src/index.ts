@@ -1,10 +1,12 @@
 import express from 'express'
 import httpProxy from 'http-proxy'
+import dotenv from 'dotenv';
 
+dotenv.config();
 const app = express()
 const PORT = 8000
 
-const BASE_PATH = 'https://pub-4975739d2cd141b2958f2d6a65579610.r2.dev'
+const BASE_PATH = process.env.BASE_PATH
 
 const proxy = httpProxy.createProxy()
 

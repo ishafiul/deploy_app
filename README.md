@@ -5,6 +5,13 @@ repository and sets up a reverse proxy on a subdomain to make the app accessible
 video, but, due to AWS account constraints, it utilizes custom infrastructure.
 Built using [dockerode](https://www.npmjs.com/package/dockerode/v/2.5.5) for Docker container management and Redis task queuing.
 
+### Demo(console): https://deploy-react-app-1fw.pages.dev/projects
+## Demo Apps Build with this System:
+- **Flutter:** https://ecc7f5e8-b2cf-47ec-a718-b26ffdbc09fd.ishaf.site/ 
+- **React:** https://560d2540-2354-4b73-91f2-1572c80dbae7.ishaf.site/
+- **Vue:** https://e3718779-eba8-450c-aafa-8e7d6896de29.ishaf.site/
+
+
 ## Features
 - **React App Builder:** Builds a React application from a specified Git repository.
 - **Subdomain Reverse Proxy:** Deploys the app to a subdomain to make it accessible to the user.

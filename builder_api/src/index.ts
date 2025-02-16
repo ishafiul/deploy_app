@@ -13,10 +13,7 @@ import projectRoute from "./module/project/route";
 
 const app = new OpenAPIHono<HonoTypes>();
 
-export const server = Bun.serve({
-    fetch: app.fetch,
-    websocket: websocket as WebSocketHandler<BunWebSocketData>,
-});
+
 
 // Add CORS middleware
 app.use('/*', cors({
@@ -64,4 +61,8 @@ app.onError(async (err, c) => {
     return onError(logger, err, c);
 });
 
-export default app
+export const server = Bun.serve({
+    fetch: app.fetch,
+    port: 3548,
+    websocket: websocket as WebSocketHandler<BunWebSocketData>,
+});

@@ -1,0 +1,53 @@
+
+services:
+  builder-service:
+    image: ishafiul/builder-service
+    container_name: builder_service
+    restart: always
+    environment:
+      - R2_ACCOUNT_ID=
+      - R2_ACCESS_KEY_ID=
+      - R2_ACCESS_KEY_SECRET=
+      - R2_BUCKET=
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - RADIS_HOST=redis-builder
+      - RADIS_PORT=6370
+    depends_on:
+      - redis-builder
+    volumes:
+      - ./app:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  builder-proxy-public:
+    image: ishafiul/builder-proxy-public:latest
+    container_name: builder-proxy-public
+    restart: always
+    ports:
+      - "5487:8000"
+    environment:
+      - BASE_PATH=
+  api:
+    image: ishafiul/builder-api-public:latest
+    container_name: builder-api-public
+    ports:
+      - "4581:3548"
+    environment:
+      - TURSO_AUTH_TOKEN=
+      - TURSO_URL=
+      - JWT_SECRET=
+      - SERVER_KEY=
+      - REDIS_HOST=redis-builder
+      - REDIS_PORT=6379
+      - PROXY_HOST=ishaf.site
+      - PORT:3548
+    depends_on:
+      - redis-builder
+    restart: unless-stopped
+  
+  redis-builder:
+    image: redis:7-alpine
+    ports:
+      - "6370:6379"
+    volumes:
+      - /mnt/sdb2/redis-data:/data
+    restart: unless-stopped
