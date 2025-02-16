@@ -5,7 +5,7 @@ repository and sets up a reverse proxy on a subdomain to make the app accessible
 video, but, due to AWS account constraints, it utilizes custom infrastructure.
 Built using [dockerode](https://www.npmjs.com/package/dockerode/v/2.5.5) for Docker container management and Redis task queuing.
 
-### Demo(console): https://deploy-react-app-1fw.pages.dev/projects
+### Demo(console): https://console.ishaf.info
 ## Demo Apps Build with this System:
 - **Flutter:** https://ecc7f5e8-b2cf-47ec-a718-b26ffdbc09fd.ishaf.site/ 
 - **React:** https://560d2540-2354-4b73-91f2-1572c80dbae7.ishaf.site/
