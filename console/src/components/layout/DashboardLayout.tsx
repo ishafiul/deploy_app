@@ -18,7 +18,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       <div className="flex justify-between w-full">
         <div className="h-full lg:w-64">
           <div
-            className={`fixed top-16 w-64 left-0 bottom-0 bg-[#111111] border-r border-[#1D1D1D]   transform transition-transform duration-200 ease-in-out z-40
+            className={`fixed top-16 w-64 left-0 bottom-0 bg-black/40 backdrop-blur-md border-r border-[#1D1D1D]   transform transition-transform duration-200 ease-in-out z-40
           ${
             sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
           }`}>

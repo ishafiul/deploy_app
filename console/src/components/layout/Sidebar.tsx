@@ -80,8 +80,8 @@ export const Sidebar = ({ onClose }: SidebarProps) => {
             className={({ isActive }) =>
               `flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                 isActive
-                  ? "bg-[#1D1D1D] text-white"
-                  : "text-zinc-400 hover:text-white hover:bg-[#1D1D1D]"
+                  ? "bg-black/40 backdrop-blur-md text-white"
+                  : "text-zinc-400 hover:text-white hover:bg-black/40"
               }`
             }>
             <span className="mr-3">{item.icon}</span>
@@ -90,8 +90,8 @@ export const Sidebar = ({ onClose }: SidebarProps) => {
         ))}
       </nav>
       {/* Version number */}
-      <div className=" text-xs text-zinc-600 ">
-        Version 1.0.0
+      <div className="text-center text-xs text-white/40 ">
+        Version 1.0.1
       </div>
     </div>
   );

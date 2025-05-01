@@ -62,7 +62,7 @@ export const VerifyOtpPage = () => {
           <div className="text-center">
             <div className="flex justify-center mb-6">
               {/* Logo */}
-              <svg className="h-12 w-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg className="h-12 w-12 logo-spin-animation" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2L2 19.7778H22L12 2Z" fill="currentColor"/>
               </svg>
             </div>

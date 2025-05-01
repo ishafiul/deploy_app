@@ -5,13 +5,13 @@ export const SettingsPage = () => {
   const { email } = useSelector((state: RootState) => state.auth);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="lg:ml-10 max-w-4xl mx-auto space-y-6">
       <div className="border-b border-zinc-800 pb-5">
         <h1 className="text-2xl sm:text-3xl font-bold text-white">Settings</h1>
         <p className="mt-2 text-sm sm:text-base text-zinc-400">Manage your account settings and preferences.</p>
       </div>
 
-      <div className="bg-zinc-900 rounded-lg border border-zinc-800 divide-y divide-zinc-800">
+      <div className="bg-black/40 backdrop-blur-md rounded-lg border border-zinc-800 divide-y divide-zinc-800">
         {/* Profile Settings */}
         <div className="p-4 sm:p-6">
           <div className="space-y-6">

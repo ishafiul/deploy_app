@@ -65,13 +65,13 @@ export const LoginPage = () => {
       </div>
 
       {/* Right Panel - Login Form */}
-      <div className=" w-full lg:w-1/2 flex lg:flex-col items-center justify-center px-2 sm:px-6 lg:px-8 bg-black/40 backdrop-blur-md text-white max-lg:rounded-md">
+      <div className="w-full lg:w-1/2 flex lg:flex-col items-center justify-center px-2 sm:px-6 lg:px-8 bg-black/40 backdrop-blur-md text-white max-lg:rounded-md">
         <div className="w-full lg:max-w-md lg:space-y-8 max-lg:p-4 max-lg:my-10">
           <div className="text-center">
             <div className="flex justify-center mb-6">
               {/* Logo */}
               <svg
-                className="h-12 w-12"
+                className="h-12 w-12 logo-spin-animation"
                 viewBox="0 0 24 24"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg">

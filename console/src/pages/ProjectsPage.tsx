@@ -114,7 +114,7 @@ export const ProjectsPage = () => {
   }
 
   return (
-    <div>
+    <div className='lg:ml-10 py-5'>
       <div className="border-b border-zinc-800">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div className='text-start'>
@@ -165,7 +165,7 @@ export const ProjectsPage = () => {
             <div
               key={project.id}
               onClick={() => navigate(`/projects/${project.id}`)}
-              className="bg-zinc-900 rounded-lg border border-zinc-800 p-4 cursor-pointer hover:border-zinc-700 transition-all duration-200"
+              className="bg-zinc-900/40 backdrop-blur-md rounded-lg border border-zinc-800 p-4 cursor-pointer hover:border-zinc-700 transition-all duration-200"
             >
               <div className="flex justify-between gap-2 items-start mb-4">
                 <h3 className="text-lg font-medium text-white overflow-hidden">{project.name}</h3>

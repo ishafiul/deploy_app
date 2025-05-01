@@ -14,13 +14,13 @@ export const Navbar = ({ onMenuClick }: NavbarProps) => {
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 h-16 bg-[#111111] border-b border-[#1D1D1D] z-50">
+    <div className="fixed top-0 left-0 right-0 h-16 bg-black/40 backdrop-blur-md border-b border-[#1D1D1D] z-50">
       <div className="h-16 px-4 flex items-center justify-between">
         {/* Left side */}
         <div className="flex items-center space-x-4">
           <button
             onClick={onMenuClick}
-            className="p-2 text-zinc-400 hover:text-white rounded-lg hover:bg-[#1D1D1D] transition-colors lg:hidden">
+            className="bg-black/40 backdrop-blur-md p-2 text-zinc-400 hover:text-white rounded-lg hover:bg-[#1D1D1D] transition-colors lg:hidden">
             <svg
               className="w-5 h-5"
               fill="none"
@@ -37,7 +37,7 @@ export const Navbar = ({ onMenuClick }: NavbarProps) => {
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 flex items-center justify-center bg-white rounded-lg">
               <svg
-                className="w-5 h-5 text-black"
+                className="w-5 h-5 text-black logo-spin-animation"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24">
@@ -59,7 +59,7 @@ export const Navbar = ({ onMenuClick }: NavbarProps) => {
         <div className="flex items-center space-x-4">
           <button
             onClick={handleLogout}
-            className="px-3 py-1.5 text-sm text-zinc-300 hover:text-white transition-colors">
+            className="bg-black/40 backdrop-blur-md px-3 py-1.5 text-sm text-zinc-300 hover:text-white transition-colors">
             Logout
           </button>
         </div>

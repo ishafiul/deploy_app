@@ -9,6 +9,13 @@
   animation: background-color-change 5s infinite;
 }
 
+.logo-spin-animation {
+  transition: all 0.5s ease-in-out;
+  transform: rotate(0deg);
+  animation: logo-spin 3s infinite;
+}
+
+
 .logo {
   height: 6em;
   padding: 1.5em;
