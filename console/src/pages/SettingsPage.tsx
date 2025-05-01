@@ -21,7 +21,7 @@ export const SettingsPage = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <div>
+              <div className='text-start'>
                 <label htmlFor="email" className="block text-sm font-medium text-zinc-400">
                   Email Address
                 </label>
@@ -40,7 +40,7 @@ export const SettingsPage = () => {
 
         {/* Preferences */}
         <div className="p-4 sm:p-6">
-          <div className="space-y-6">
+          <div className="space-y-6 text-start">
             <div>
               <h2 className="text-lg font-medium text-white">Preferences</h2>
               <p className="mt-1 text-sm text-zinc-400">Customize your experience.</p>
@@ -89,7 +89,7 @@ export const SettingsPage = () => {
             </div>
 
             <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-start">
                 <div className="flex-grow">
                   <h3 className="text-sm font-medium text-white">Delete Account</h3>
                   <p className="mt-1 text-sm text-zinc-400">Permanently delete your account and all associated data.</p>

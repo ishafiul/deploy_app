@@ -144,7 +144,7 @@ export default function ProjectDetailsPage() {
     }
 
     return (
-        <div className="-m-6 min-h-screen flex flex-col">
+        <div className="flex flex-col">
             {/* Header */}
             <div className="px-6 py-4 border-b border-[#1D1D1D]">
                 <div className="flex items-center justify-between">
@@ -175,7 +175,7 @@ export default function ProjectDetailsPage() {
                         </div>
                     </div>
 
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-center ">
                         <div
                             className="px-3 py-1 text-xs font-medium rounded-full bg-[#1D1D1D] text-zinc-300 border border-[#2D2D2D]">
                             {project.status}
