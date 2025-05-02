@@ -48,7 +48,7 @@ export const LoginPage = () => {
   return (
     <div className="lg:min-h-[90vh] lg:flex max-lg:flex-col shadow-xl">
       {/* Left Panel - Illustration (Desktop Only) */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-zinc-900 items-center justify-center">
+      <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20" />
         <div className="relative">
           {/* Grid Pattern */}
