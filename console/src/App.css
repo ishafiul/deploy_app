@@ -1,9 +1,20 @@
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 1em;
+  color: #fff;
+  animation: background-color-change 5s infinite;
 }
+
+.logo-spin-animation {
+  transition: all 0.5s ease-in-out;
+  transform: rotate(0deg);
+  animation: logo-spin 3s infinite;
+}
+
 
 .logo {
   height: 6em;
@@ -24,6 +35,18 @@
   }
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes background-color-change {
+  0% {
+    background-color: #1f2d47;
+  }
+  20% {
+    background-color: #292947;
+  }
+  100% {
+    background-color: #212d47;
   }
 }
 

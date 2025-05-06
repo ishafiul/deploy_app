@@ -40,9 +40,9 @@ export const VerifyOtpPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-black">
+    <div className="min-h-[90vh] shadow-xl flex ">
       {/* Left Panel - Illustration (Desktop Only) */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-zinc-900 items-center justify-center">
+      <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20" />
         <div className="relative">
           {/* Grid Pattern */}
@@ -57,12 +57,12 @@ export const VerifyOtpPage = () => {
       </div>
 
       {/* Right Panel - OTP Form */}
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 bg-black text-white">
+      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 bg-black/40 backdrop-blur-md text-white">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
             <div className="flex justify-center mb-6">
               {/* Logo */}
-              <svg className="h-12 w-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg className="h-12 w-12 logo-spin-animation" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2L2 19.7778H22L12 2Z" fill="currentColor"/>
               </svg>
             </div>
@@ -75,7 +75,7 @@ export const VerifyOtpPage = () => {
           </div>
 
           <div className="mt-8">
-            <div className="bg-zinc-900 rounded-lg p-8 shadow-xl border border-zinc-800">
+            <div className="bg-zinc-900/40 backdrop-blur-md rounded-lg p-8 border border-zinc-800">
               <form className="space-y-6" onSubmit={handleSubmit}>
                 {error && (
                   <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-md text-sm">

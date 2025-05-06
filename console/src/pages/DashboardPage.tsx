@@ -1,6 +1,6 @@
 export const DashboardPage = () => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 lg:ml-10">
       <div className="border-b border-zinc-800 pb-5">
         <h1 className="text-2xl sm:text-3xl font-bold text-white">Dashboard</h1>
         <p className="mt-2 text-sm sm:text-base text-zinc-400">Welcome to your React Builder dashboard.</p>
@@ -9,7 +9,7 @@ export const DashboardPage = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Total Projects */}
-        <div className="bg-zinc-900 rounded-lg border border-zinc-800 hover:border-zinc-700 transition-colors duration-200">
+        <div className="bg-black/40 backdrop-blur-md rounded-lg border border-zinc-800 hover:border-zinc-700 transition-colors duration-200">
           <div className="p-5">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold text-white">Total Projects</h2>
@@ -27,7 +27,7 @@ export const DashboardPage = () => {
         </div>
 
         {/* Recent Builds */}
-        <div className="bg-zinc-900 rounded-lg border border-zinc-800 hover:border-zinc-700 transition-colors duration-200">
+        <div className="bg-black/40 backdrop-blur-md rounded-lg border border-zinc-800 hover:border-zinc-700 transition-colors duration-200">
           <div className="p-5">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold text-white">Recent Builds</h2>
@@ -45,7 +45,7 @@ export const DashboardPage = () => {
         </div>
 
         {/* Storage Used */}
-        <div className="bg-zinc-900 rounded-lg border border-zinc-800 hover:border-zinc-700 transition-colors duration-200">
+        <div className="bg-black/40 backdrop-blur-md rounded-lg border border-zinc-800 hover:border-zinc-700 transition-colors duration-200">
           <div className="p-5">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold text-white">Storage Used</h2>
@@ -66,7 +66,7 @@ export const DashboardPage = () => {
       {/* Recent Activity */}
       <div className="mt-8">
         <h2 className="text-lg font-medium text-white mb-4">Recent Activity</h2>
-        <div className="bg-zinc-900 rounded-lg border border-zinc-800">
+        <div className="bg-black/40 backdrop-blur-md rounded-lg border border-zinc-800">
           <div className="p-4 sm:p-6 text-center">
             <svg className="w-12 h-12 mx-auto text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />

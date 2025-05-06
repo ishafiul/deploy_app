@@ -5,13 +5,13 @@ export const SettingsPage = () => {
   const { email } = useSelector((state: RootState) => state.auth);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="lg:ml-10 max-w-4xl mx-auto space-y-6">
       <div className="border-b border-zinc-800 pb-5">
         <h1 className="text-2xl sm:text-3xl font-bold text-white">Settings</h1>
         <p className="mt-2 text-sm sm:text-base text-zinc-400">Manage your account settings and preferences.</p>
       </div>
 
-      <div className="bg-zinc-900 rounded-lg border border-zinc-800 divide-y divide-zinc-800">
+      <div className="bg-black/40 backdrop-blur-md rounded-lg border border-zinc-800 divide-y divide-zinc-800">
         {/* Profile Settings */}
         <div className="p-4 sm:p-6">
           <div className="space-y-6">
@@ -21,7 +21,7 @@ export const SettingsPage = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <div>
+              <div className='text-start'>
                 <label htmlFor="email" className="block text-sm font-medium text-zinc-400">
                   Email Address
                 </label>
@@ -40,7 +40,7 @@ export const SettingsPage = () => {
 
         {/* Preferences */}
         <div className="p-4 sm:p-6">
-          <div className="space-y-6">
+          <div className="space-y-6 text-start">
             <div>
               <h2 className="text-lg font-medium text-white">Preferences</h2>
               <p className="mt-1 text-sm text-zinc-400">Customize your experience.</p>
@@ -89,7 +89,7 @@ export const SettingsPage = () => {
             </div>
 
             <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-start">
                 <div className="flex-grow">
                   <h3 className="text-sm font-medium text-white">Delete Account</h3>
                   <p className="mt-1 text-sm text-zinc-400">Permanently delete your account and all associated data.</p>

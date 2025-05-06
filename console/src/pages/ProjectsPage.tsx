@@ -114,14 +114,14 @@ export const ProjectsPage = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="border-b border-zinc-800 pb-5">
+    <div className='lg:ml-10 py-5'>
+      <div className="border-b border-zinc-800">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div>
+          <div className='text-start'>
             <h1 className="text-2xl sm:text-3xl font-bold text-white">My Projects</h1>
-            <p className="mt-2 text-sm sm:text-base text-zinc-400">Manage your React projects and deployments.</p>
+            <p className="my-2  text-sm sm:text-base font-medium text-zinc-400">Manage your React projects and deployments.</p>
           </div>
-          <div className="mt-4 sm:mt-0">
+          <div className="my-4 sm:my-0">
             <button 
               onClick={() => setIsCreateModalOpen(true)}
               className="w-full sm:w-auto px-4 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-500 transition-colors duration-200 flex items-center justify-center space-x-2 text-sm font-medium"
@@ -165,10 +165,10 @@ export const ProjectsPage = () => {
             <div
               key={project.id}
               onClick={() => navigate(`/projects/${project.id}`)}
-              className="bg-zinc-900 rounded-lg border border-zinc-800 p-4 cursor-pointer hover:border-zinc-700 transition-all duration-200"
+              className="bg-zinc-900/40 backdrop-blur-md rounded-lg border border-zinc-800 p-4 cursor-pointer hover:border-zinc-700 transition-all duration-200"
             >
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-lg font-medium text-white">{project.name}</h3>
+              <div className="flex justify-between gap-2 items-start mb-4">
+                <h3 className="text-lg font-medium text-white overflow-hidden">{project.name}</h3>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
                   {project.status}
                 </span>
